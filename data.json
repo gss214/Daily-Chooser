@@ -1,1 +1,37 @@
-{"fintech-plataform": {"art": {"odds": 12.5, "daily_chosen": 0}, "caio": {"odds": 12.5, "daily_chosen": 0}, "fer": {"odds": 0.5, "daily_chosen": 1}, "fop": {"odds": 0.5, "daily_chosen": 1}, "gui": {"odds": 12.5, "daily_chosen": 0}, "helly": {"odds": 0.5, "daily_chosen": 1}, "jyn": {"odds": 12.5, "daily_chosen": 0}, "leo": {"odds": 0.5, "daily_chosen": 2}}, "daily_number": 6}
+{
+    "fintech-plataform": {
+        "art": {
+            "odds": 12.5,
+            "daily_chosen": 0
+        },
+        "caio": {
+            "odds": 12.5,
+            "daily_chosen": 0
+        },
+        "fer": {
+            "odds": 12.5,
+            "daily_chosen": 0
+        },
+        "fop": {
+            "odds": 12.5,
+            "daily_chosen": 0
+        },
+        "gui": {
+            "odds": 12.5,
+            "daily_chosen": 0
+        },
+        "helly": {
+            "odds": 12.5,
+            "daily_chosen": 0
+        },
+        "jyn": {
+            "odds": 12.5,
+            "daily_chosen": 0
+        },
+        "leo": {
+            "odds": 12.5,
+            "daily_chosen": 0
+        }
+    },
+    "daily_number": 1
+}

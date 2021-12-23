@@ -67,6 +67,7 @@ def showStats(data):
         print(
             f"{person} - {data['fintech-plataform'][person]['daily_chosen']}/{data['daily_number']}")
 
+
 def checkOdds(data):
     check = True
     for person in data['fintech-plataform']:
@@ -76,8 +77,21 @@ def checkOdds(data):
     if check:
         for person in data['fintech-plataform']:
             data['fintech-plataform'][person]['odds'] = 12.5
-    
+
     return data
+
+
+def setup(data):
+    odds = []
+    print('Do you want to take someone out of the draw?')
+    take_out = input().split()
+    print('Odds of the day:\n')
+    for person in data['fintech-plataform']:
+        if person in take_out:
+            data['fintech-plataform'][person]['odds'] = 0
+        print(f"{person} - {data['fintech-plataform'][person]['odds']}%")
+        odds.append(data['fintech-plataform'][person]['odds'])
+    return odds
 
 
 def main():
@@ -85,32 +99,20 @@ def main():
     data = loadJson('data.json')
     data = checkOdds(data)
     print(assets.arts['daily'])
-    print(f"Daily number {data['daily_number']} (since 02/01/2022)\n")
-    print('Do you want to take someone out of the draw?')
-    take_out = input().split()
-    print('Odds of the day:\n')
-    odds = []
-    for person in data['fintech-plataform']:
-        if person in take_out:
-            data['fintech-plataform'][person]['odds'] = 0
-        print(f"{person} - {data['fintech-plataform'][person]['odds']}%")
-        odds.append(data['fintech-plataform'][person]['odds'])
-    print('Starting the draw in 3 seconds...')
-    sleep(3)
+    odds = setup(data)
+    print('Starting the draw in 5 seconds...')
+    sleep(5)
     chosen = draw(data, odds)
     animation(data)
     print(assets.arts['daily'])
-    print(assets.bcolors.OKGREEN)
-    if chosen == 'jyn':
-        print(f'\t\t{chosen} you have been chojyn!')
-    else:
-        print(f'\t\t{chosen} you have been chosen!')
-    print(assets.bcolors.ENDC)
+    print(f'{assets.bcolors.OKGREEN}\t\t{chosen} you have been chosen!{assets.bcolors.ENDC}')
     if validateDraw():
+        print(f'{assets.bcolors.OKGREEN}Daily validated{assets.bcolors.ENDC}\n')
+        print(f"Daily number {data['daily_number']} (since 02/01/2022)\n")
         data = setOddsAndStats(data, chosen)
+        showStats(data)
         data['daily_number'] += 1
         save(data, 'data.json')
-        showStats(data)
     else:
         print('Restarting...')
         sleep(2)
