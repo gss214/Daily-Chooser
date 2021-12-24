@@ -52,32 +52,27 @@ def validateDraw():
 
 
 def setOddsAndStats(data, chosen):
+    retro = (data['fintech-plataform'][chosen]['odds'] - 0.5) / 7
     for person in data['fintech-plataform']:
         if person == chosen:
             data['fintech-plataform'][person]['odds'] = 0.5
             data['fintech-plataform'][person]['daily_chosen'] += 1
-        if data['fintech-plataform'][person]['odds'] == 0:
-            data['fintech-plataform'][person]['odds'] = 12.5
+        else:
+            data['fintech-plataform'][person]['odds'] += retro
+
     return data
 
 
 def showStats(data):
-    print('Stats:\n')
+    print(f"\t\t{'-' * 44}")
+    print(f"\t\t|{' ' * 19}Stats{' ' * 18}|")
+    print(f"\t\t|{'-'* 42}|")
+    print(f"\t\t|{' ' * 4}Daily number {data['daily_number']} (since 02/01/2022){' ' * 4}|")
+    print(f"\t\t|{'-'* 42}|")
     for person in data['fintech-plataform']:
         print(
-            f"{person} - {data['fintech-plataform'][person]['daily_chosen']}/{data['daily_number']}")
-
-
-def checkOdds(data):
-    check = True
-    for person in data['fintech-plataform']:
-        if data['fintech-plataform'][person]['odds'] == 12.5:
-            check = False
-
-    if check:
-        for person in data['fintech-plataform']:
-            data['fintech-plataform'][person]['odds'] = 12.5
-
+            f"\t\t|{' ' * 15}{person} - {data['fintech-plataform'][person]['daily_chosen']}/{data['daily_number']}{' ' * (20 - len(person))}|")
+    print(f"\t\t|{'-'* 42}|")
     return data
 
 
@@ -85,30 +80,38 @@ def setup(data):
     odds = []
     print('Do you want to take someone out of the draw?')
     take_out = input().split()
-    print('Odds of the day:\n')
+    print(f"\t\t{'-' * 44}")
+    print(f"\t\t|{' '* 14}Odds of the day:{' ' * 12}|")
+    print(f"\t\t|{'-'* 42}|")
+    print(f"\t\t|{' ' * 8}Person{' ' * 7}|{' ' * 8}Odds{' ' *8}|")
+    print(f"\t\t|{'-' * 21}|{'-' * 20}|")
     for person in data['fintech-plataform']:
         if person in take_out:
-            data['fintech-plataform'][person]['odds'] = 0
-        print(f"{person} - {data['fintech-plataform'][person]['odds']}%")
-        odds.append(data['fintech-plataform'][person]['odds'])
+            print(f"\t\t|{assets.bcolors.WARNING}{person}{assets.bcolors.ENDC} {' ' * (19 - len(person))} | {assets.bcolors.WARNING}0.00%{' ' * 14}{assets.bcolors.ENDC}|")
+            odds.append(0)
+        else:
+            spaces_odds = 13 if data['fintech-plataform'][person]['odds'] > 10 else 14
+            print(f"\t\t|{person} {' ' * (19 - len(person))} | {data['fintech-plataform'][person]['odds']:.2f}%{' ' * spaces_odds}|")
+            odds.append(data['fintech-plataform'][person]['odds'])
+    print(f"\t\t|{'-' * 42}|")
     return odds
 
 
 def main():
     clear()
     data = loadJson('data.json')
-    data = checkOdds(data)
     print(assets.arts['daily'])
     odds = setup(data)
-    print('Starting the draw in 5 seconds...')
-    sleep(5)
+    print('\nPress enter to start the draw')
+    input()
     chosen = draw(data, odds)
     animation(data)
     print(assets.arts['daily'])
-    print(f'{assets.bcolors.OKGREEN}\t\t{chosen} you have been chosen!{assets.bcolors.ENDC}')
+    print(f"{assets.bcolors.OKGREEN}\t\t{chosen} you have been chosen!")
+    print(
+        f"\t\t{chosen} was chosen with a {data['fintech-plataform'][chosen]['odds']:.2f}% chance{assets.bcolors.ENDC}")
     if validateDraw():
         print(f'{assets.bcolors.OKGREEN}Daily validated{assets.bcolors.ENDC}\n')
-        print(f"Daily number {data['daily_number']} (since 02/01/2022)\n")
         data = setOddsAndStats(data, chosen)
         showStats(data)
         data['daily_number'] += 1
