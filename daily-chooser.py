@@ -1,126 +1,156 @@
+import init
+from pathlib import Path
 from random import choice, choices
-from os import system, name
+from rich.console import Console
+from rich.table import Table
 from time import sleep
-import assets
-import json
+import utils
 
-
-def clear():
-    if name == 'nt':
-        _ = system('cls')
-    else:
-        _ = system('clear')
-
-
-def loadJson(json_name):
-    with open(json_name) as json_file:
-        data = json.load(json_file)
-    return data
-
-
-def save(data, json_name):
-    with open(json_name, 'w') as json_file:
-        json.dump(data, json_file)
-
-
-def draw(data, odds):
-    chosen = choices(list(data['fintech-plataform'].keys()),
+def chosen_one(data, odds):
+    chosen = choices(list(data['members'].keys()),
                      weights=odds, k=1)
     return chosen[0]
 
-
-def animation(data):
-    clear()
+def animation(data, take_out):
+    utils.clear()
     for _ in range(10):
-        print(assets.arts['daily'])
-        random_person = choice(list(data['fintech-plataform'].keys()))
-        for person in data['fintech-plataform']:
-            if (person == random_person):
-                print(f'➡️ {person}')
+        print(utils.arts['daily'])
+        random_person = choice(list(data['members'].keys()))
+        is_chosen = ''
+        table = Table(title="Odds of the day")
+        columns = ["Person", "Odds"]
+
+        for column in columns:
+            table.add_column(column)
+        for person in data['members']:
+            if person == random_person:
+                is_chosen = '➡️'
             else:
-                print(f'{person}')
-        sleep(0.5)
-        clear()
-    clear()
+                is_chosen = ''
+
+            if person in take_out:
+                table.add_row(f'{is_chosen}  {person}', '0%', style='yellow')
+            else:
+                table.add_row(f'{is_chosen}  {person}', f'{"%0.2f" % (data["members"][person]["odds"])}%', style='bright_green')
+
+        console = Console()
+        console.print(table)
+        sleep(0.2)
+        utils.clear()
+    utils.clear()
 
 
 def validateDraw():
-    v = input('Do you want to validate the result?\n')
+    v = input('Do you want to validate the result? (y|n)\n')
     if v == 'y':
         return True
     return False
 
 
 def setOddsAndStats(data, chosen):
-    retro = (data['fintech-plataform'][chosen]['odds'] - 0.5) / 7
-    for person in data['fintech-plataform']:
+    retro = (data['members'][chosen]['odds']) / (len(data['members']) - 1)
+    sum = 0
+    for person in data['members']:
         if person == chosen:
-            data['fintech-plataform'][person]['odds'] = 0.5
-            data['fintech-plataform'][person]['daily_chosen'] += 1
+            data['members'][person]['odds'] = 0
+            data['members'][person]['daily_chosen'] += 1
         else:
-            data['fintech-plataform'][person]['odds'] += retro
-
+            data['members'][person]['odds'] += retro
+        sum+=data['members'][person]['odds']
     return data
 
 
 def showStats(data):
-    print(f"\t\t{'-' * 44}")
-    print(f"\t\t|{' ' * 19}Stats{' ' * 18}|")
-    print(f"\t\t|{'-'* 42}|")
-    print(f"\t\t|{' ' * 4}Daily number {data['daily_number']} (since 02/01/2022){' ' * 4}|")
-    print(f"\t\t|{'-'* 42}|")
-    for person in data['fintech-plataform']:
-        print(
-            f"\t\t|{' ' * 15}{person} - {data['fintech-plataform'][person]['daily_chosen']}/{data['daily_number']}{' ' * (20 - len(person))}|")
-    print(f"\t\t|{'-'* 42}|")
-    return data
-
-
+    table = Table(title=f"Stats: Daily Number - {data['quantity_dailys']}")
+    columns = ["Person", "Stats"]
+    for column in columns:
+        table.add_column(column)
+    for person in data['members']:
+        table.add_row(person, str(data['members'][person]['daily_chosen']) + f"/{data['quantity_dailys']}", style='bright_green')
+            
+    console = Console()
+    console.print(table)
+    
 def setup(data):
     odds = []
     print('Do you want to take someone out of the draw?')
     take_out = input().split()
-    print(f"\t\t{'-' * 44}")
-    print(f"\t\t|{' '* 14}Odds of the day:{' ' * 12}|")
-    print(f"\t\t|{'-'* 42}|")
-    print(f"\t\t|{' ' * 8}Person{' ' * 7}|{' ' * 8}Odds{' ' *8}|")
-    print(f"\t\t|{'-' * 21}|{'-' * 20}|")
-    for person in data['fintech-plataform']:
+    table = Table(title=f"Daily {data['team_name']}\n Odds of the day")
+    columns = ["Person", "Odds"]
+    for column in columns:
+        table.add_column(column)
+    for person in data['members']:
         if person in take_out:
-            print(f"\t\t|{assets.bcolors.WARNING}{person}{assets.bcolors.ENDC} {' ' * (19 - len(person))} | {assets.bcolors.WARNING}0.00%{' ' * 14}{assets.bcolors.ENDC}|")
+            table.add_row(person, '0%', style='yellow')
             odds.append(0)
         else:
-            spaces_odds = 13 if data['fintech-plataform'][person]['odds'] > 10 else 14
-            print(f"\t\t|{person} {' ' * (19 - len(person))} | {data['fintech-plataform'][person]['odds']:.2f}%{' ' * spaces_odds}|")
-            odds.append(data['fintech-plataform'][person]['odds'])
-    print(f"\t\t|{'-' * 42}|")
-    return odds
+            table.add_row(person, f'{"%0.2f" % (data["members"][person]["odds"])}%', style='bright_green')
+            odds.append(data['members'][person]['odds'])
 
+    console = Console()
+    console.print(table)
+    return odds, take_out
 
-def main():
-    clear()
-    data = loadJson('data.json')
-    print(assets.arts['daily'])
-    odds = setup(data)
+def draw():
+    utils.clear()
+    print(utils.arts['daily'])
+    data = utils.loadJson('data.json')
+    odds, take_out = setup(data)
     print('\nPress enter to start the draw')
     input()
-    chosen = draw(data, odds)
-    animation(data)
-    print(assets.arts['daily'])
-    print(f"{assets.bcolors.OKGREEN}\t\t{chosen} you have been chosen!")
+    chosen = chosen_one(data, odds)
+    animation(data, take_out)
+    print(utils.arts['daily'])
+    print(f"{utils.bcolors.OKGREEN}\t\t{chosen} you have been chosen!")
     print(
-        f"\t\t{chosen} was chosen with a {data['fintech-plataform'][chosen]['odds']:.2f}% chance{assets.bcolors.ENDC}")
+        f"\t\t{chosen} was chosen with a {data['members'][chosen]['odds']:.2f}% chance{utils.bcolors.ENDC}")
     if validateDraw():
-        print(f'{assets.bcolors.OKGREEN}Daily validated{assets.bcolors.ENDC}\n')
+        print(f'{utils.bcolors.OKGREEN}Daily validated{utils.bcolors.ENDC}\n')
         data = setOddsAndStats(data, chosen)
         showStats(data)
-        data['daily_number'] += 1
-        save(data, 'data.json')
+        data['quantity_dailys'] += 1
+        utils.saveJson(data, 'data.json')
     else:
         print('Restarting...')
-        sleep(2)
-        main()
+        sleep(1)
+        draw()
 
+def reset_odds():
+    data = utils.loadJson('data.json')
+    initial_odds = 100 / len(data['members'])
+    for _ in data['members']:
+        data['members'][_]['odds'] = initial_odds
+    utils.saveJson(data,'data.json')
+
+def settings():
+    utils.clear()
+    print(utils.arts['daily'])
+    print('Select a option\n\n1 - Reset Odds\n2 - Menu')
+    op = int(input())
+    if op == 1:
+        reset_odds()
+        print('Odds reset successfully')
+        sleep(2)
+        settings()
+    elif op == 2:
+        menu()
+
+def menu():
+    utils.clear()
+    print(utils.arts['daily'])
+    print('Select a option\n\n1 - Start the draw\n2 - Settings')
+    op = int(input())
+    if op == 1:
+        draw()
+    elif op == 2:
+        settings()
+
+def main():
+    path_to_file = 'data.json'
+    path = Path(path_to_file)   
+    if not path.is_file():
+        init.main()
+    menu()
 
 if __name__ == '__main__':
     main()
