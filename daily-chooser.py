@@ -7,9 +7,20 @@ from time import sleep
 import utils
 
 def chosen_one(data, odds):
-    chosen = choices(list(data['members'].keys()),
+    members_list = list(data['members'].keys())
+    chosen = choices(members_list,
                      weights=odds, k=1)
-    return chosen[0]
+    return chosen[0], odds[members_list.index(chosen[0])]
+
+def show_table(title, rows, columns):
+    table = Table(title=title)
+    for column in columns:
+        table.add_column(column)
+    for row in rows:
+        table.add_row(*row[:-1], style=row[-1])
+            
+    console = Console()
+    console.print(table)
 
 def animation(data, take_out):
     utils.clear()
@@ -17,24 +28,18 @@ def animation(data, take_out):
         print(utils.arts['daily'])
         random_person = choice(list(data['members'].keys()))
         is_chosen = ''
-        table = Table(title="Odds of the day")
+        title="Odds of the day"
         columns = ["Person", "Odds"]
-
-        for column in columns:
-            table.add_column(column)
+        rows = []
         for person in data['members']:
-            if person == random_person:
-                is_chosen = '➡️'
-            else:
-                is_chosen = ''
-
+            is_chosen = '➡️' if person == random_person else ''
+        
             if person in take_out:
-                table.add_row(f'{is_chosen}  {person}', '0%', style='yellow')
+                rows.append([f'{is_chosen}  {person}', '0%', 'yellow'])
             else:
-                table.add_row(f'{is_chosen}  {person}', f'{"%0.2f" % (data["members"][person]["odds"])}%', style='bright_green')
+                rows.append([f'{is_chosen}  {person}', f'{"%0.2f" % (data["members"][person]["odds"])}%', 'bright_green'])
 
-        console = Console()
-        console.print(table)
+        show_table(title, rows, columns)
         sleep(0.2)
         utils.clear()
     utils.clear()
@@ -61,34 +66,34 @@ def setOddsAndStats(data, chosen):
 
 
 def showStats(data):
-    table = Table(title=f"Stats: Daily Number - {data['quantity_dailys']}")
+    title= f"Stats: Daily Number - {data['quantity_dailys']}"
     columns = ["Person", "Stats"]
-    for column in columns:
-        table.add_column(column)
+    rows = []
     for person in data['members']:
-        table.add_row(person, str(data['members'][person]['daily_chosen']) + f"/{data['quantity_dailys']}", style='bright_green')
+        rows.append([person, f"{data['members'][person]['daily_chosen']}/{data['quantity_dailys']}", 'bright_green'])
             
-    console = Console()
-    console.print(table)
+    show_table(title,rows,columns)
     
 def setup(data):
     odds = []
-    print('Do you want to take someone out of the draw?')
-    take_out = input().split()
-    table = Table(title=f"Daily {data['team_name']}\n Odds of the day")
+    print('Do you want to take someone out of the draw? (separate the names by ", ")')
+    take_out = input().split(', ')
+    redistribution = 0
+    title=f"Daily {data['team_name']}\n Odds of the day"
     columns = ["Person", "Odds"]
-    for column in columns:
-        table.add_column(column)
+    rows = []
+    for person in take_out:
+        if person in data['members']:
+            redistribution += data['members'][person]['odds']
     for person in data['members']:
         if person in take_out:
-            table.add_row(person, '0%', style='yellow')
+            rows.append([person, '0.00%', 'yellow'])
             odds.append(0)
         else:
-            table.add_row(person, f'{"%0.2f" % (data["members"][person]["odds"])}%', style='bright_green')
-            odds.append(data['members'][person]['odds'])
-
-    console = Console()
-    console.print(table)
+            odd = (data["members"][person]["odds"]) + (redistribution / (len(data['members']) - len(take_out)))
+            rows.append([person, f'{odd:.2f}%', 'bright_green'])
+            odds.append(odd)
+    show_table(title, rows, columns)
     return odds, take_out
 
 def draw():
@@ -98,12 +103,11 @@ def draw():
     odds, take_out = setup(data)
     print('\nPress enter to start the draw')
     input()
-    chosen = chosen_one(data, odds)
+    chosen, odd = chosen_one(data, odds)
     animation(data, take_out)
     print(utils.arts['daily'])
     print(f"{utils.bcolors.OKGREEN}\t\t{chosen} you have been chosen!")
-    print(
-        f"\t\t{chosen} was chosen with a {data['members'][chosen]['odds']:.2f}% chance{utils.bcolors.ENDC}")
+    print(f"\t\t{chosen} was chosen with a {odd:.2f}% chance{utils.bcolors.ENDC}")
     if validateDraw():
         print(f'{utils.bcolors.OKGREEN}Daily validated{utils.bcolors.ENDC}\n')
         data = setOddsAndStats(data, chosen)
