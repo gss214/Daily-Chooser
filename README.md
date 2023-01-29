@@ -8,7 +8,7 @@ Daily chooser is a script to select who from the team will command the daily on 
 $ git clone https://github.com/gss214/Daily-Chooser
 $ cd Daily-Chooser
 $ pip install -r requirements.txt
-$ python daily-chooser.py
+$ python src/daily-chooser.py
 ```
 
 ## How it works
